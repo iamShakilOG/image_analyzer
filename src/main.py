@@ -16,64 +16,71 @@ from supervisely.app.widgets import (
 
 from quality import analyze_image
 
-
-# --------------------------------------------------
-# ENV & API
-# --------------------------------------------------
+# -----------------------------------
+# ENV + API
+# -----------------------------------
 api = sly.Api.from_env()
 
 PROJECT_ID = sly.env.project_id()
 DATASET_ID = sly.env.dataset_id(raise_not_found=False)
-TEAM_ID = sly.env.team_id()
 
-if PROJECT_ID is None:
-    raise RuntimeError("Run app from Project or Dataset context")
-
-
-# --------------------------------------------------
-# UI WIDGETS
-# --------------------------------------------------
-blur_input = InputNumber(value=100, min=1, label="Blur threshold")
-low_brightness_input = InputNumber(value=60, min=0, label="Low brightness")
-high_brightness_input = InputNumber(value=200, min=0, label="High brightness")
-grayscale_tol_input = InputNumber(value=2, min=0, label="Grayscale tolerance")
+# -----------------------------------
+# UI WIDGETS (NO LABEL ARGUMENTS ❗)
+# -----------------------------------
+blur_input = InputNumber(value=100, min=1)
+low_brightness_input = InputNumber(value=60, min=0)
+high_brightness_input = InputNumber(value=200, min=0)
+grayscale_tol_input = InputNumber(value=2, min=0)
 export_csv_checkbox = Checkbox("Export CSV", checked=True)
 
-run_btn = Button("Run analysis", button_type="primary")
+run_button = Button("Run analysis", button_type="primary")
+
+status_text = Text()
 progress = SlyTqdm()
 progress.hide()
 
-stats_text = Text()
-stats_text.hide()
-
-
+# -----------------------------------
+# UI LAYOUT
+# -----------------------------------
 settings_card = Card(
-    title="Settings",
-    content=Container(
-        [
-            blur_input,
-            low_brightness_input,
-            high_brightness_input,
-            grayscale_tol_input,
-            export_csv_checkbox,
-            run_btn,
-            progress,
-            stats_text,
-        ]
-    ),
+    title="Image Quality Settings",
+    content=Container([
+        Text("Blur threshold"),
+        blur_input,
+
+        Text("Low brightness threshold"),
+        low_brightness_input,
+
+        Text("High brightness threshold"),
+        high_brightness_input,
+
+        Text("Grayscale tolerance"),
+        grayscale_tol_input,
+
+        export_csv_checkbox,
+    ]),
 )
 
-app = sly.Application(layout=settings_card)
+output_card = Card(
+    title="Output",
+    content=Container([
+        run_button,
+        progress,
+        status_text,
+    ]),
+)
 
+layout = Container([settings_card, output_card])
 
-# --------------------------------------------------
-# BUTTON HANDLER
-# --------------------------------------------------
-@run_btn.click
-def run_analysis():
-    run_btn.disable()
+app = sly.Application(layout=layout)
+
+# -----------------------------------
+# BUTTON CALLBACK (THIS IS THE KEY)
+# -----------------------------------
+@run_button.click
+def run():
+    status_text.text = "Running image quality analysis..."
     progress.show()
-    stats_text.hide()
 
     cfg = {
         "blur_th": blur_input.get_value(),
@@ -82,7 +89,6 @@ def run_analysis():
         "grayscale_tol": grayscale_tol_input.get_value(),
     }
 
-    # decide datasets
     if DATASET_ID is not None:
         dataset_ids = [DATASET_ID]
     else:
@@ -95,46 +101,54 @@ def run_analysis():
     for ds_id in dataset_ids:
         images.extend(api.image.get_list(ds_id))
 
-    with progress(total=len(images)) as pbar:
-        for img_info in images:
-            tmp_path = os.path.join(tempfile.gettempdir(), img_info.name)
-            api.image.download(img_info.id, tmp_path)
+    progress.set_total(len(images))
 
-            img = cv2.imread(tmp_path)
-            if img is None:
-                pbar.update(1)
-                continue
+    for img_info in images:
+        tmp = os.path.join(tempfile.gettempdir(), img_info.name)
+        api.image.download(img_info.id, tmp)
 
-            res = analyze_image(img, cfg)
+        img = cv2.imread(tmp)
+        if img is None:
+            progress.update(1)
+            continue
 
-            stats["total"] += 1
-            stats["blur"] += int(res["blur"])
-            stats["dark"] += int(res["low_brightness"])
-            stats["bright"] += int(res["high_brightness"])
-            stats["gray"] += int(res["grayscale"])
+        res = analyze_image(img, cfg)
 
-            rows.append({"image": img_info.name, **res})
-            pbar.update(1)
+        stats["total"] += 1
+        stats["blur"] += int(res["blur"])
+        stats["dark"] += int(res["low_brightness"])
+        stats["bright"] += int(res["high_brightness"])
+        stats["gray"] += int(res["grayscale"])
 
-    # Export CSV
+        rows.append({"image": img_info.name, **res})
+        progress.update(1)
+
+    progress.hide()
+
+    # -----------------------------------
+    # CSV EXPORT
+    # -----------------------------------
     if export_csv_checkbox.is_checked() and rows:
         df = pd.DataFrame(rows)
-        local_csv = "/sly-app-data/image_quality_report.csv"
-        df.to_csv(local_csv, index=False)
+        csv_path = "/sly-app-data/image_quality_report.csv"
+        df.to_csv(csv_path, index=False)
 
-        remote_path = f"/image_quality_analyzer/{PROJECT_ID}_report.csv"
-        api.file.upload(TEAM_ID, local_csv, remote_path)
+        api.file.upload(
+            team_id=sly.env.team_id(),
+            local_path=csv_path,
+            remote_path=f"/image_quality_analyzer/{PROJECT_ID}_report.csv",
+        )
 
-    stats_text.set(
-        text=(
-            f"Images analyzed: {stats['total']}\n"
-            f"Blurred: {stats['blur']}\n"
-            f"Too dark: {stats['dark']}\n"
-            f"Too bright: {stats['bright']}\n"
-            f"Grayscale: {stats['gray']}"
-        ),
-        status="success",
+    # -----------------------------------
+    # UI OUTPUT
+    # -----------------------------------
+    status_text.text = (
+        f"✅ Done!\n\n"
+        f"Images analyzed: {stats['total']}\n"
+        f"Blurred: {stats['blur']}\n"
+        f"Too dark: {stats['dark']}\n"
+        f"Too bright: {stats['bright']}\n"
+        f"Grayscale: {stats['gray']}"
     )
 
-    stats_text.show()
-    run_btn.enable()
+    sly.logger.info("Image Quality Summary", extra=stats)
