@@ -19,5 +19,5 @@
     ]
   },
 
-  "modal_template": "src/modal.html"
+  "gui_template": "src/modal.html"
 }
