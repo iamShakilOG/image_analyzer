@@ -1,23 +1,14 @@
 {
   "name": "Image Quality Analyzer",
   "type": "app",
-  "version": "0.0.13",
+  "description": "Analyze image quality and show statistics",
   "categories": ["quality-control", "statistics"],
-  "description": "Detect grayscale, blur, and brightness issues in images",
-
   "docker_image": "supervisely/base-py-sdk:6.72.0",
   "main_script": "src/main.py",
-
-  "isolate": true,
   "task_location": "workspace_tasks",
-  "restartPolicy": "never",
+  "isolate": true,
 
   "context_menu": {
-    "target": [
-      "images_project",
-      "images_dataset"
-    ]
-  },
-
-  "gui_template": "src/modal.html"
+    "target": ["images_project", "images_dataset"]
+  }
 }
