@@ -10,16 +10,29 @@ my_app = sly.AppService()
 api = sly.Api.from_env()
 
 TASK_ID = int(os.environ["TASK_ID"])
-PROJECT_ID = int(os.environ["state.slyProjectId"])
+TEAM_ID = int(os.environ["context.teamId"])
+
+# ---- Project / Dataset resolution (robust) ----
+PROJECT_ID = (
+    os.environ.get("context.projectId")
+    or os.environ.get("context.slyProjectId")
+    or os.environ.get("state.slyProjectId")
+)
+
+if PROJECT_ID is None:
+    raise RuntimeError(
+        "Project ID not found. App must be launched from Project/Dataset context menu."
+    )
+
+PROJECT_ID = int(PROJECT_ID)
 DATASET_ID = os.environ.get("context.datasetId")
 
-# modal values
-BLUR_TH = int(os.environ.get("modal.state.blurTh", 100))
-LOW_BRIGHTNESS = int(os.environ.get("modal.state.lowBrightness", 60))
-HIGH_BRIGHTNESS = int(os.environ.get("modal.state.highBrightness", 200))
-GRAYSCALE_TOL = int(os.environ.get("modal.state.grayscaleTol", 2))
-EXPORT_CSV = os.environ.get("modal.state.exportCsv", "true") == "true"
-
+# ---- Modal values ----
+BLUR_TH = float(os.environ.get("state.blurTh", 100))
+LOW_BRIGHTNESS = float(os.environ.get("state.lowBrightness", 60))
+HIGH_BRIGHTNESS = float(os.environ.get("state.highBrightness", 200))
+GRAYSCALE_TOL = float(os.environ.get("state.grayscaleTol", 2))
+EXPORT_CSV = os.environ.get("state.exportCsv", "true") == "true"
 
 
 @my_app.callback("do")
@@ -43,7 +56,11 @@ def do(**kwargs):
 
     for ds_id in datasets:
         for img_info in api.image.get_list(ds_id):
-            tmp_path = os.path.join(tempfile.gettempdir(), img_info.name)
+            tmp_path = os.path.join(
+                tempfile.gettempdir(),
+                f"{img_info.id}_{img_info.name}"
+            )
+
             api.image.download(img_info.id, tmp_path)
 
             img = cv2.imread(tmp_path)
@@ -59,7 +76,7 @@ def do(**kwargs):
         df.to_csv(csv_path, index=False)
 
         remote_path = f"/image_quality_analyzer/{PROJECT_ID}_report.csv"
-        api.file.upload(TASK_ID, csv_path, remote_path)
+        api.file.upload(TEAM_ID, csv_path, remote_path)
 
     sly.logger.info("QC finished", extra={"images": len(rows)})
     my_app.stop()
