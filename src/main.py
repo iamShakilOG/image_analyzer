@@ -108,7 +108,8 @@ def do(**kwargs):
 
 
 def main():
-    my_app.run(initial_events=[{"command": "do"}])
+     
+     my_app.run() 
 
 
 if __name__ == "__main__":
