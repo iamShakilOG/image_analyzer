@@ -8,8 +8,8 @@ def analyze_image(img, cfg):
     blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
 
     is_grayscale = (
-        np.std(img[:,:,0] - img[:,:,1]) < cfg["grayscale_tol"] and
-        np.std(img[:,:,1] - img[:,:,2]) < cfg["grayscale_tol"]
+        np.std(img[:, :, 0] - img[:, :, 1]) < cfg["grayscale_tol"] and
+        np.std(img[:, :, 1] - img[:, :, 2]) < cfg["grayscale_tol"]
     )
 
     return {
@@ -19,5 +19,5 @@ def analyze_image(img, cfg):
         "grayscale": is_grayscale,
         "brightness": brightness,
         "contrast": contrast,
-        "blur_score": blur_score
+        "blur_score": blur_score,
     }

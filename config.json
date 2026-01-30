@@ -1,6 +1,7 @@
 {
   "name": "Image Quality Analyzer",
   "type": "app",
+  "version": "0.0.13",
   "categories": ["quality-control", "statistics"],
   "description": "Detect grayscale, blur, and brightness issues in images",
 
