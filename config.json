@@ -10,5 +10,7 @@
 
   "context_menu": {
     "target": ["images_project", "images_dataset"]
-  }
+  },
+
+  "gui_template": "src/modal.html"
 }

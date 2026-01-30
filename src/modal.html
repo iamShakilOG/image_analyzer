@@ -1,21 +1,31 @@
 <div>
-  <sly-field title="Blur threshold">
-    <el-input-number v-model="state.blurTh" :min="1"></el-input-number>
-  </sly-field>
+  <sly-field title="Image Quality Analyzer">
+    <el-form label-position="top">
 
-  <sly-field title="Low brightness threshold">
-    <el-input-number v-model="state.lowBrightness" :min="0" :max="255"></el-input-number>
-  </sly-field>
+      <el-form-item label="Blur threshold">
+        <el-input-number v-model="state.blurTh" :min="1" />
+      </el-form-item>
 
-  <sly-field title="High brightness threshold">
-    <el-input-number v-model="state.highBrightness" :min="0" :max="255"></el-input-number>
-  </sly-field>
+      <el-form-item label="Low brightness">
+        <el-input-number v-model="state.lowBrightness" :min="0" />
+      </el-form-item>
 
-  <sly-field title="Grayscale tolerance">
-    <el-input-number v-model="state.grayscaleTol" :min="0"></el-input-number>
-  </sly-field>
+      <el-form-item label="High brightness">
+        <el-input-number v-model="state.highBrightness" :min="0" />
+      </el-form-item>
 
-  <sly-field>
-    <el-checkbox v-model="state.exportCsv">Export CSV</el-checkbox>
+      <el-form-item label="Grayscale tolerance">
+        <el-input-number v-model="state.grayscaleTol" :min="0" />
+      </el-form-item>
+
+      <el-checkbox v-model="state.exportCsv">Export CSV</el-checkbox>
+
+      <br /><br />
+
+      <el-button type="primary" @click="run">
+        Run Analysis
+      </el-button>
+
+    </el-form>
   </sly-field>
 </div>
