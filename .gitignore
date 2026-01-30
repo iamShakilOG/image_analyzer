@@ -1,2 +1,3 @@
-# Ignore virtual environment
-sly_env/sly_env/
+# .gitignore
+sly_env/
+sly_cli_env/
