@@ -10,7 +10,7 @@ my_app = sly.AppService()
 api = sly.Api.from_env()
 
 TASK_ID = int(os.environ["TASK_ID"])
-PROJECT_ID = int(os.environ["context.projectId"])
+PROJECT_ID = int(os.environ["state.slyProjectId"])
 DATASET_ID = os.environ.get("context.datasetId")
 
 # modal values
