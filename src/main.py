@@ -104,7 +104,7 @@ def do(**kwargs):
     #     """,
     # )
 
-    my_app.stop()
+    # my_app.stop()
 
 
 def main():
