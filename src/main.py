@@ -93,16 +93,16 @@ def do(**kwargs):
     # -----------------------------------
     # SET OUTPUT & FINISH
     # -----------------------------------
-    api.task.set_output_text(
-        TASK_ID,
-        f"""
-        Images analyzed: {stats['total']}
-        Blurred: {stats['blur']}
-        Too dark: {stats['dark']}
-        Too bright: {stats['bright']}
-        Grayscale: {stats['gray']}
-        """,
-    )
+    # api.task.set_output_text(
+    #     TASK_ID,
+    #     f"""
+    #     Images analyzed: {stats['total']}
+    #     Blurred: {stats['blur']}
+    #     Too dark: {stats['dark']}
+    #     Too bright: {stats['bright']}
+    #     Grayscale: {stats['gray']}
+    #     """,
+    # )
 
     my_app.stop()
 
