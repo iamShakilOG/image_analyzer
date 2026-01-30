@@ -10,15 +10,16 @@ my_app = sly.AppService()
 api = sly.Api.from_env()
 
 TASK_ID = int(os.environ["TASK_ID"])
-PROJECT_ID = int(os.environ["modal.state.slyProjectId"])
+PROJECT_ID = int(os.environ["context.projectId"])
 DATASET_ID = os.environ.get("context.datasetId")
 
-# ---- values from modal.html ----
+# modal values
 BLUR_TH = int(os.environ.get("modal.state.blurTh", 100))
 LOW_BRIGHTNESS = int(os.environ.get("modal.state.lowBrightness", 60))
 HIGH_BRIGHTNESS = int(os.environ.get("modal.state.highBrightness", 200))
 GRAYSCALE_TOL = int(os.environ.get("modal.state.grayscaleTol", 2))
 EXPORT_CSV = os.environ.get("modal.state.exportCsv", "true") == "true"
+
 
 
 @my_app.callback("do")

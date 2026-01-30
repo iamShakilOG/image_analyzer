@@ -7,8 +7,9 @@
   "main_script": "src/main.py",
   "task_location": "workspace_tasks",
   "isolate": true,
-  "integrated_into": ["standalone", "project_context_menu", "dataset_context_menu"],
+  "integrated_into": ["project_context_menu", "dataset_context_menu"],
   "context_menu": {
     "target": ["project", "dataset"]
-  }
+  },
+  "modal_template": "src/modal.html"
 }
