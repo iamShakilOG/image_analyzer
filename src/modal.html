@@ -1,31 +1,34 @@
-<div>
+<div style="padding: 16px">
+
   <sly-field title="Image Quality Analyzer">
-    <el-form label-position="top">
 
-      <el-form-item label="Blur threshold">
-        <el-input-number v-model="state.blurTh" :min="1" />
-      </el-form-item>
+    <sly-field title="Blur threshold">
+      <el-input-number v-model="state.blurTh" :min="1" />
+    </sly-field>
 
-      <el-form-item label="Low brightness">
-        <el-input-number v-model="state.lowBrightness" :min="0" />
-      </el-form-item>
+    <sly-field title="Low brightness">
+      <el-input-number v-model="state.lowBrightness" :min="0" />
+    </sly-field>
 
-      <el-form-item label="High brightness">
-        <el-input-number v-model="state.highBrightness" :min="0" />
-      </el-form-item>
+    <sly-field title="High brightness">
+      <el-input-number v-model="state.highBrightness" :min="0" />
+    </sly-field>
 
-      <el-form-item label="Grayscale tolerance">
-        <el-input-number v-model="state.grayscaleTol" :min="0" />
-      </el-form-item>
+    <sly-field title="Grayscale tolerance">
+      <el-input-number v-model="state.grayscaleTol" :min="0" />
+    </sly-field>
 
+    <sly-field>
       <el-checkbox v-model="state.exportCsv">Export CSV</el-checkbox>
+    </sly-field>
 
-      <br /><br />
+    <el-divider></el-divider>
 
-      <el-button type="primary" @click="command='do'">
-        Run
-      </el-button>
+    <!-- 🔥 THIS WILL NOW TRIGGER BACKEND -->
+    <el-button type="primary" @click="command='do'">
+      Run
+    </el-button>
 
-    </el-form>
   </sly-field>
+
 </div>
