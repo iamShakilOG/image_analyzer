@@ -4,14 +4,37 @@ import cv2
 import pandas as pd
 import supervisely as sly
 
-from ui import (
-    layout, run_btn, summary_text, table,
-    blur_th, low_brightness, high_brightness, grayscale_tol
+from supervisely.app.widgets import (
+    Container, Field, InputNumber, Button, Text, Table
 )
+
 from quality import analyze_image
 
 api = sly.Api.from_env()
-app = sly.App(layout=layout)
+
+# -------- UI --------
+blur_th = InputNumber(100, min=1, step=10)
+low_brightness = InputNumber(60, min=0, max=255)
+high_brightness = InputNumber(200, min=0, max=255)
+grayscale_tol = InputNumber(2, min=0, max=10)
+
+run_btn = Button("Run Analysis", button_size="large")
+
+summary = Text("")
+table = Table(columns=["Metric", "Count"], data=[])
+
+layout = Container(widgets=[
+    Field("Blur threshold", blur_th),
+    Field("Low brightness", low_brightness),
+    Field("High brightness", high_brightness),
+    Field("Grayscale tolerance", grayscale_tol),
+    run_btn,
+    summary,
+    table
+])
+
+# ✅ THIS IS THE KEY LINE
+app = sly.Application(layout=layout)
 
 PROJECT_ID = sly.env.project_id()
 DATASET_ID = sly.env.dataset_id(raise_not_found=False)
@@ -45,20 +68,20 @@ def run():
 
             res = analyze_image(img, cfg)
             total += 1
-            blur += res["blur"]
-            dark += res["low_brightness"]
-            bright += res["high_brightness"]
-            gray += res["grayscale"]
+            blur += int(res["blur"])
+            dark += int(res["low_brightness"])
+            bright += int(res["high_brightness"])
+            gray += int(res["grayscale"])
 
             rows.append({"image": img_info.name, **res})
 
-    # ---- UPDATE UI ----
-    summary_text.text = (
-        f"Processed {total} images\n"
+    summary.set(
+        f"Processed: {total}\n"
         f"Blurred: {blur}\n"
         f"Too dark: {dark}\n"
         f"Too bright: {bright}\n"
-        f"Grayscale: {gray}"
+        f"Grayscale: {gray}",
+        status="success"
     )
 
     table.data = [
@@ -69,7 +92,6 @@ def run():
         ["Grayscale", gray],
     ]
 
-    # ---- EXPORT CSV ----
     if rows:
         df = pd.DataFrame(rows)
         csv_path = "/tmp/image_quality_report.csv"
@@ -80,6 +102,3 @@ def run():
             local_path=csv_path,
             remote_path=f"/image_quality_analyzer/{PROJECT_ID}_report.csv"
         )
-
-        sly.logger.info("CSV uploaded")
-
