@@ -16,139 +16,78 @@ from supervisely.app.widgets import (
 
 from quality import analyze_image
 
-# -----------------------------------
-# ENV + API
-# -----------------------------------
 api = sly.Api.from_env()
-
 PROJECT_ID = sly.env.project_id()
 DATASET_ID = sly.env.dataset_id(raise_not_found=False)
+TEAM_ID = sly.env.team_id()
 
-# -----------------------------------
-# UI WIDGETS (NO LABEL ARGUMENTS ❗)
-# -----------------------------------
-blur_input = InputNumber(value=100, min=1)
-low_brightness_input = InputNumber(value=60, min=0)
-high_brightness_input = InputNumber(value=200, min=0)
-grayscale_tol_input = InputNumber(value=2, min=0)
-export_csv_checkbox = Checkbox("Export CSV", checked=True)
+# ---------------- UI ----------------
+blur = InputNumber(value=100, min=1)
+low_b = InputNumber(value=60, min=0)
+high_b = InputNumber(value=200, min=0)
+gray = InputNumber(value=2, min=0)
+export_csv = Checkbox("Export CSV", checked=True)
 
-run_button = Button("Run analysis", button_type="primary")
-
-status_text = Text()
+run_btn = Button("Run", button_type="primary")
+status = Text()
 progress = SlyTqdm()
 progress.hide()
 
-# -----------------------------------
-# UI LAYOUT
-# -----------------------------------
-settings_card = Card(
-    title="Image Quality Settings",
-    content=Container([
-        Text("Blur threshold"),
-        blur_input,
-
-        Text("Low brightness threshold"),
-        low_brightness_input,
-
-        Text("High brightness threshold"),
-        high_brightness_input,
-
-        Text("Grayscale tolerance"),
-        grayscale_tol_input,
-
-        export_csv_checkbox,
-    ]),
-)
-
-output_card = Card(
-    title="Output",
-    content=Container([
-        run_button,
-        progress,
-        status_text,
-    ]),
-)
-
-layout = Container([settings_card, output_card])
-
-app = sly.Application(layout=layout)
-
-# -----------------------------------
-# BUTTON CALLBACK (THIS IS THE KEY)
-# -----------------------------------
-@run_button.click
+@run_btn.click
 def run():
-    status_text.text = "Running image quality analysis..."
+    status.text = "Running analysis..."
     progress.show()
 
     cfg = {
-        "blur_th": blur_input.get_value(),
-        "low_brightness": low_brightness_input.get_value(),
-        "high_brightness": high_brightness_input.get_value(),
-        "grayscale_tol": grayscale_tol_input.get_value(),
+        "blur_th": blur.get_value(),
+        "low_brightness": low_b.get_value(),
+        "high_brightness": high_b.get_value(),
+        "grayscale_tol": gray.get_value(),
     }
 
-    if DATASET_ID is not None:
-        dataset_ids = [DATASET_ID]
-    else:
-        dataset_ids = [d.id for d in api.dataset.get_list(PROJECT_ID)]
+    datasets = [DATASET_ID] if DATASET_ID else [
+        d.id for d in api.dataset.get_list(PROJECT_ID)
+    ]
 
     rows = []
-    stats = {"total": 0, "blur": 0, "dark": 0, "bright": 0, "gray": 0}
-
     images = []
-    for ds_id in dataset_ids:
-        images.extend(api.image.get_list(ds_id))
+    for ds in datasets:
+        images.extend(api.image.get_list(ds))
 
     progress.set_total(len(images))
 
-    for img_info in images:
-        tmp = os.path.join(tempfile.gettempdir(), img_info.name)
-        api.image.download(img_info.id, tmp)
+    for img in images:
+        tmp = os.path.join(tempfile.gettempdir(), img.name)
+        api.image.download(img.id, tmp)
 
-        img = cv2.imread(tmp)
-        if img is None:
+        im = cv2.imread(tmp)
+        if im is None:
             progress.update(1)
             continue
 
-        res = analyze_image(img, cfg)
-
-        stats["total"] += 1
-        stats["blur"] += int(res["blur"])
-        stats["dark"] += int(res["low_brightness"])
-        stats["bright"] += int(res["high_brightness"])
-        stats["gray"] += int(res["grayscale"])
-
-        rows.append({"image": img_info.name, **res})
+        res = analyze_image(im, cfg)
+        rows.append({"image": img.name, **res})
         progress.update(1)
 
     progress.hide()
 
-    # -----------------------------------
-    # CSV EXPORT
-    # -----------------------------------
-    if export_csv_checkbox.is_checked() and rows:
+    if export_csv.is_checked() and rows:
         df = pd.DataFrame(rows)
-        csv_path = "/sly-app-data/image_quality_report.csv"
-        df.to_csv(csv_path, index=False)
+        local = "/sly-app-data/report.csv"
+        df.to_csv(local, index=False)
+        api.file.upload(TEAM_ID, local, f"/image_quality/{PROJECT_ID}.csv")
 
-        api.file.upload(
-            team_id=sly.env.team_id(),
-            local_path=csv_path,
-            remote_path=f"/image_quality_analyzer/{PROJECT_ID}_report.csv",
-        )
+    status.text = f"✅ Done. Images analyzed: {len(rows)}"
 
-    # -----------------------------------
-    # UI OUTPUT
-    # -----------------------------------
-    status_text.text = (
-        f"✅ Done!\n\n"
-        f"Images analyzed: {stats['total']}\n"
-        f"Blurred: {stats['blur']}\n"
-        f"Too dark: {stats['dark']}\n"
-        f"Too bright: {stats['bright']}\n"
-        f"Grayscale: {stats['gray']}"
-    )
+layout = Container([
+    Card("Settings", content=Container([
+        Text("Blur threshold"), blur,
+        Text("Low brightness"), low_b,
+        Text("High brightness"), high_b,
+        Text("Grayscale tolerance"), gray,
+        export_csv,
+    ])),
+    Card("Run", content=Container([run_btn, progress, status])),
+])
 
-    sly.logger.info("Image Quality Summary", extra=stats)
+app = sly.Application(layout=layout)
