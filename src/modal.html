@@ -1,0 +1,22 @@
+<div>
+    <sly-field title="Blur threshold"
+               description="Lower value = more blurry">
+        <el-input-number v-model="state.blurTh" :min="1"></el-input-number>
+    </sly-field>
+
+    <sly-field title="Low brightness threshold">
+        <el-input-number v-model="state.lowBrightness" :min="0" :max="255"></el-input-number>
+    </sly-field>
+
+    <sly-field title="High brightness threshold">
+        <el-input-number v-model="state.highBrightness" :min="0" :max="255"></el-input-number>
+    </sly-field>
+
+    <sly-field title="Grayscale tolerance">
+        <el-input-number v-model="state.grayscaleTol" :min="0" :max="10"></el-input-number>
+    </sly-field>
+
+    <sly-field>
+        <el-checkbox v-model="state.exportCsv">Export CSV report</el-checkbox>
+    </sly-field>
+</div>
