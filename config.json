@@ -5,11 +5,14 @@
   "description": "Detect grayscale, blur, and brightness issues in images",
   "docker_image": "supervisely/base-py-sdk:6.72.0",
   "main_script": "src/main.py",
-  "task_location": "workspace_tasks",
   "isolate": true,
-  "integrated_into": ["project_context_menu", "dataset_context_menu"],
-  "context_menu": {
-    "target": ["project", "dataset"]
-  },
-  "modal_template": "src/modal.html"
+
+  "integrated_into": [
+    "project_context_menu",
+    "dataset_context_menu"
+  ],
+
+  "modal_template": "src/modal.html",
+  "task_location": "workspace_tasks",
+  "restartPolicy": "never"
 }
